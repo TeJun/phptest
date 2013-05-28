@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head><title>Whiteboard Writer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>#example { border: thin solid gray;}</style>
+</head>
+<body>
+<h1>Whiteboard Writer<h1>
+<button id='clear'>Clear</button>
+<canvas id="example" width="800" height="480"></canvas>
+    <script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script> 
+   
+    
+   <script>
+           // canvasDrawr originally from Mike Taylr  http://miketaylr.com/
+           // Tim Branyen massaged it: http://timbranyen.com/
+           // and Paul Irish did too. with multi touch. http://paulirish.com/demo/multi
+           // and boris fixed some touch identifier stuff to be more specific.
+           // @dontcallmedom added posting to broadcast events via eventsource
+
+           var CanvasDrawr = function(options) {
+               // grab canvas element
+               var canvas = document.getElementById(options.id),
+                   ctxt = canvas.getContext("2d");
+                   
+               canvas.style.width = '100%'
+               canvas.width = canvas.offsetWidth;
+               canvas.style.width = '';
+
+               // set props from options, but the defaults are for the cool kids
+               ctxt.lineWidth = options.size || Math.ceil(Math.random() * 35);
+               ctxt.lineCap = options.lineCap || "round";
+               ctxt.pX = undefined;
+               ctxt.pY = undefined;
+
+               var lines = [,,];
+               var offset = $(canvas).offset();
+               
+               var self = {
+                   //bind click events
+                   init: function() {
+                    $.post('/connect', {'ua': navigator.userAgent});
+                    canvas.addEventListener('touchstart', self.preDraw, false);
+                    canvas.addEventListener('touchmove', self.draw, false);
+
+                    // Handle mouse events
+                    canvas.addEventListener('mousedown', self.preMouseDraw, false);
+                    canvas.addEventListener('mousemove', self.mouseDraw, false)
+                    canvas.addEventListener('mouseup', self.postMouseDraw, false);
+
+                    return self;
+                   },
+
+                   preDraw: function(event) {
+                       $.each(event.touches, function(i, touch) {
+                         
+                           var id = touch.identifier;
+                         
+                           lines[id] = { x     : this.pageX - offset.left, 
+                                         y     : this.pageY - offset.top, 
+                                         color : "black"
+                                      };
+                       });
+
+                       event.preventDefault();
+                   },
+
+                   draw: function(event) {
+                       var e = event, hmm = {};
+
+                       $.each(event.touches, function(i, touch) {
+                           var id = touch.identifier,
+                               moveX = this.pageX - offset.left - lines[id].x,
+                               moveY = this.pageY - offset.top - lines[id].y;
+
+                           var ret = self.move(id, moveX, moveY);
+                           lines[id].x = ret.x;
+                           lines[id].y = ret.y;
+                       });
+
+                       event.preventDefault();
+                   },
+
+                   preMouseDraw: function (event) {
+                       lines['mouse'] = {
+                           x: event.clientX - offset.left,
+                           y: event.clientY - offset.top,
+                           color: "black"
+                       };
+                       event.preventDefault();
+                   },
+
+                   mouseDraw: function (event) {
+                       var id = 'mouse';
+                       if (lines[id]) {
+                           moveX = event.clientX - offset.left - lines[id].x;
+                           moveY = event.clientY - offset.top - lines[id].y;
+                           var ret = self.move('mouse', moveX, moveY);
+                           lines[id].x = ret.x;
+                           lines[id].y = ret.y;
+                           event.preventDefault();
+                       }
+                   },
+
+                   postMouseDraw: function (event) {
+                       var id = 'mouse';
+                       if (lines[id]) {
+                           lines[id] = null;
+                           event.preventDefault();
+                       }
+                   },
+
+                   move: function(i, changeX, changeY) {
+                       ctxt.strokeStyle = lines[i].color;
+                       ctxt.beginPath();
+                       ctxt.moveTo(lines[i].x, lines[i].y);
+
+                       ctxt.lineTo(lines[i].x + changeX, lines[i].y + changeY);
+                       ctxt.stroke();
+                       ctxt.closePath();
+	               $.post('/draw', {'from': {x: lines[i].x, y: lines[i].y}, 'to': {x: lines[i].x + changeX, y: lines[i].y + changeY}});
+                       return { x: lines[i].x + changeX, y: lines[i].y + changeY };
+                   },
+	           clear: function() {
+	               ctxt.clearRect(0, 0, 800, 480);
+               	       $.post('/clear');
+	   }
+               };
+
+               return self.init();
+           };
+           $(function(){
+             var super_awesome_multitouch_drawing_canvas_thingy = new CanvasDrawr({id:"example", size: 5 }); 
+	   // Clear on shake
+	   // adapted from http://www.jeffreyharrell.com/blog/2010/11/creating-a-shake-event-in-mobile-safari/
+	   if (typeof window.DeviceMotionEvent != undefined) {
+	     // Shake sensitivity (a lower number is more)
+	     var sensitivity = 0.7;
+	   
+	     // Position variables
+	     var x1 = 0, y1 = 0, z1 = 0, x2 = null, y2 = null, z2 = null;
+
+	     // Listen to motion events and update the position 
+	     /* window.addEventListener('devicemotion', function (e) {
+					x1 = e.accelerationIncludingGravity.x;
+					y1 = e.accelerationIncludingGravity.y;
+					z1 = e.accelerationIncludingGravity.z;
+				}, true);
+
+				// Periodically check the position and fire
+				// if the change is greater than the sensitivity 
+				setInterval(function () {	
+		if (x2 != null) {
+					var change = Math.abs(x1 - x2 + y1 - y2 + z1 - z2);
+		
+					if (change > sensitivity) {
+super_awesome_multitouch_drawing_canvas_thingy.clear();
+					}
+}
+					// Update new position
+					x2 = x1;
+					y2 = y1;
+					z2 = z1;
+				}, 150);*/
+	   }
+document.getElementById('clear').addEventListener('click', function() {
+super_awesome_multitouch_drawing_canvas_thingy.clear();
+return true;
+}, false);
+
+           });
+</script></body>
+</html>

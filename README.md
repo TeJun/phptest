@@ -1,3 +1,1 @@
-Here is a sample code.
-
-use Node.js to implement shared canvas
+This prototype illustrates how to use node.js to relay touch events on a canvas via a Server Sent Events stream to a canvas on another page (that can be loaded from a different device).
