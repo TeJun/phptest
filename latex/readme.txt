@@ -1,3 +1,5 @@
+Please look http://www.mayer.dial.pipex.com/tex.htm first.
+
 For other PHP programs create a new folder called latexrender and inside this copy
 a) the 2 files: latex.php and class.latexrender.php
 b) two empty subfolders /tmp and /pictures which must be writeable by the scripts so may need to be chmod 777
@@ -21,3 +23,9 @@ $latextext=latex_content($latextext);
 $latextext will now contain a link to the image in latexrender/pictures
 
 Steve Mayer mayer@dial.pipex.com
+
+
+
+// add by soar, 2013-05-28
+create index.php for test latex render
+user can set render size by himself

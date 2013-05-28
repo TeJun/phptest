@@ -20,13 +20,10 @@ function sendLatex(){
 <center>
   <h3>LatexRender Demo</h3>
 	<form method='post'>
-<!--	<input onclick="addtags()" type="button" value="Add TeX tags" name="btnCopy"><br> -->
 	<h5>Convert Latex to PNG by php</h5>
 	<textarea id='latex_formula' name='latex_formula' rows=8 cols=50></textarea>
-
 	<br><br>
 	<input type='submit' value='Render'><br/><br />
-
 <?php
 include_once("latex.php");
 
